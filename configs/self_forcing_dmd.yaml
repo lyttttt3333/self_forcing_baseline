@@ -17,10 +17,10 @@ guidance_scale: 3.0
 denoising_loss_type: flow
 mixed_precision: true
 seed: 0
-wandb_host: WANDB_HOST
-wandb_key: WANDB_KEY
-wandb_entity: WANDB_ENTITY
-wandb_project: WANDB_PROJECT
+wandb_host: https://api.wandb.ai
+wandb_key: 5409d3b960b01b25cec0f6abb5361b4022f0cc41
+wandb_entity: liyitong-Tsinghua University
+wandb_project: self-forcing
 sharding_strategy: hybrid_full
 lr: 2.0e-06
 lr_critic: 4.0e-07
