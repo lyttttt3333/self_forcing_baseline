@@ -1,0 +1,6 @@
+__pycache__
+*.egg-info
+
+wan_models
+checkpoints
+prompts/vidprom_filtered_extended.txt
