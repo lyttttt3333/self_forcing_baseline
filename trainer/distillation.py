@@ -315,6 +315,8 @@ class Trainer:
         while True:
             TRAIN_GENERATOR = self.step % self.config.dfake_gen_update_ratio == 0
 
+            print(f"training {self.step} steps")
+
             # Train the generator
             if TRAIN_GENERATOR:
                 self.generator_optimizer.zero_grad(set_to_none=True)
