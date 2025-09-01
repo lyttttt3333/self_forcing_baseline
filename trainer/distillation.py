@@ -11,10 +11,38 @@ from utils.misc import (
 import torch.distributed as dist
 from omegaconf import OmegaConf
 from model import CausVid, DMD, SiD
+from pipeline import CausalInferencePipeline
 import torch
 import wandb
 import time
 import os
+
+import imageio
+from tqdm import tqdm
+
+def save_video(video_tensor, save_path, fps=30, quality=9, ffmpeg_params=None):
+    """
+    保存一个形状为 [C, T, H, W] 的视频张量到文件
+    video_tensor: torch.Tensor, float32, 值域 [-1, 1] 或 [0, 1]
+    """
+    assert video_tensor.dim() == 4, "video_tensor 必须是 4 维 [C, T, H, W]"
+    
+    # 转到 CPU，避免 GPU 张量直接参与 numpy 转换
+    video_tensor = video_tensor.detach().cpu()
+
+    # [-1, 1] → [0, 255]
+    if video_tensor.min() < 0:
+        video_tensor = (video_tensor + 1) / 2  # [-1,1] → [0,1]
+    video_tensor = (video_tensor * 255).clamp(0, 255).byte()
+
+    # [C, T, H, W] → [T, H, W, C]
+    video_tensor = video_tensor.permute(1, 2, 3, 0).numpy()
+
+    # 保存视频
+    writer = imageio.get_writer(save_path, fps=fps, quality=quality, ffmpeg_params=ffmpeg_params)
+    for frame in tqdm(video_tensor, desc="Saving video"):
+        writer.append_data(frame)
+    writer.close()
 
 
 class Trainer:
@@ -34,7 +62,7 @@ class Trainer:
         self.device = torch.cuda.current_device()
         self.is_main_process = global_rank == 0
         self.causal = config.causal
-        self.disable_wandb = config.disable_wandb
+        self.disable_wandb = False
 
         # use a random seed for the training
         if config.seed == 0:
@@ -179,6 +207,14 @@ class Trainer:
         self.max_grad_norm_critic = getattr(config, "max_grad_norm_critic", 10.0)
         self.previous_time = None
 
+        self.pipeline = CausalInferencePipeline(
+            args=config,
+            generator=self.model.generator,
+            text_encoder=self.model.text_encoder,
+            vae=self.model.vae
+        )
+
+
     def save(self):
         print("Start gathering distributed model states...")
         generator_state_dict = fsdp_state_dict(
@@ -316,6 +352,41 @@ class Trainer:
             TRAIN_GENERATOR = self.step % self.config.dfake_gen_update_ratio == 0
 
             print(f"training {self.step} steps")
+
+            if self.step % 100 == 0:
+                count = 0
+                rank = dist.get_rank()
+                os.makedirs("tmp", exist_ok=True)
+                txt_path = os.path.join("tmp", f"video_info_rank-{rank}.txt")
+                with open(txt_path, "w") as f:
+                    batch = next(self.dataloader)
+                    video = self.generate_video(self.pipeline, batch["prompts"], image=None)
+                    print("############## video shape",video.shape)
+
+                    save_video(video, output_path, fps=15, quality=5)
+                
+                    count += 1
+
+                dist.barrier()
+
+                if wandb.run is not None:
+                    print("in main process")
+                    all_video_infos = []
+                    world_size = dist.get_world_size()
+                    for r in range(world_size):
+                        rank_txt = os.path.join("tmp", f"video_info_rank-{r}.txt")
+                        print(rank_txt)
+                        if os.path.exists(rank_txt):
+                            print("exist")
+                            with open(rank_txt, "r") as f:
+                                for line in f:
+                                    base_name, output_path = line.strip().split(",", 1)
+                                    all_video_infos.append((base_name, output_path))
+
+                    for video_name, output_path in all_video_infos:
+                        print("log", video_name)
+                        wandb.log({f"gen/video_{video_name}": wandb.Video(output_path, fps=16, format="mp4")},step=self.step)
+                        # wandb.log({f"src/video_{video_name}": wandb.Video(input_path, fps=15, format="mp4")},step=steps)
 
             # Train the generator
             if TRAIN_GENERATOR:
