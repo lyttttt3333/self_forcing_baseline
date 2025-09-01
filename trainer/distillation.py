@@ -26,7 +26,7 @@ def save_video(video_tensor, save_path, fps=30, quality=9, ffmpeg_params=None):
     video_tensor: torch.Tensor, float32, 值域 [-1, 1] 或 [0, 1]
     """
     assert video_tensor.dim() == 4, "video_tensor 必须是 4 维 [C, T, H, W]"
-    video_tensor = video_tensor[[2, 1, 0], :, :, :] 
+    # video_tensor = video_tensor[[2, 1, 0], :, :, :] 
     
     # 转到 CPU，避免 GPU 张量直接参与 numpy 转换
     video_tensor = video_tensor.detach().cpu()
