@@ -32,8 +32,8 @@ def save_video(video_tensor, save_path, fps=30, quality=9, ffmpeg_params=None):
     video_tensor = video_tensor.detach().cpu()
 
     # [-1, 1] → [0, 255]
-    if video_tensor.min() < 0:
-        video_tensor = (video_tensor + 1) / 2  # [-1,1] → [0,1]
+    # if video_tensor.min() < 0:
+    #     video_tensor = (video_tensor + 1) / 2  # [-1,1] → [0,1]
     video_tensor = (video_tensor * 255).clamp(0, 255).byte()
 
     # [C, T, H, W] → [T, H, W, C]
@@ -345,7 +345,7 @@ class Trainer:
                 initial_latent=initial_latent,
                 low_memory=True
             )
-            current_video = video.permute(0, 1, 3, 4, 2) * 255.0
+            current_video = video.permute(0, 1, 3, 4, 2) #* 255.0
         return current_video
 
     def train(self):
