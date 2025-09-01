@@ -364,6 +364,12 @@ class Trainer:
                     batch = next(self.dataloader)
                     video = self.generate_video(self.pipeline, batch["prompts"], image=None)
                     print("############## video shape",video.shape)
+                    video = video[0].transpose(3,0,1,2)
+
+                    base_name = f"rank{rank}"
+
+                    output_path = os.path.join("tmp", f"teacher_{self.step:06d}_{base_name}.mp4")
+                    f.write(f"{base_name},{output_path}\n")
 
                     save_video(video, output_path, fps=15, quality=5)
                 
