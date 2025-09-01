@@ -1,4 +1,5 @@
-generator_ckpt: checkpoints/ode_init.pt
+# generator_ckpt: checkpoints/ode_init.pt
+generator_ckpt: logs/self_forcing_dmd/checkpoint_model_000200/model.pt
 generator_fsdp_wrap_strategy: size
 real_score_fsdp_wrap_strategy: size
 fake_score_fsdp_wrap_strategy: size
