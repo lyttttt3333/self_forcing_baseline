@@ -316,33 +316,34 @@ class Trainer:
         return critic_log_dict
 
     def generate_video(self, pipeline, prompts, image=None):
-        batch_size = len(prompts)
-        if image is not None:
-            image = image.squeeze(0).unsqueeze(0).unsqueeze(2).to(device="cuda", dtype=torch.bfloat16)
+        with torch.no_grad():
+            batch_size = len(prompts)
+            if image is not None:
+                image = image.squeeze(0).unsqueeze(0).unsqueeze(2).to(device="cuda", dtype=torch.bfloat16)
 
-            # Encode the input image as the first latent
-            initial_latent = pipeline.vae.encode_to_latent(image).to(device="cuda", dtype=torch.bfloat16)
-            initial_latent = initial_latent.repeat(batch_size, 1, 1, 1, 1)
-            sampled_noise = torch.randn(
-                [batch_size, self.model.num_training_frames - 1, 16, 60, 104],
-                device="cuda",
-                dtype=self.dtype
-            )
-        else:
-            initial_latent = None
-            sampled_noise = torch.randn(
-                [batch_size, self.model.num_training_frames, 16, 60, 104],
-                device="cuda",
-                dtype=self.dtype
-            )
+                # Encode the input image as the first latent
+                initial_latent = pipeline.vae.encode_to_latent(image).to(device="cuda", dtype=torch.bfloat16)
+                initial_latent = initial_latent.repeat(batch_size, 1, 1, 1, 1)
+                sampled_noise = torch.randn(
+                    [batch_size, self.model.num_training_frames - 1, 16, 60, 104],
+                    device="cuda",
+                    dtype=self.dtype
+                )
+            else:
+                initial_latent = None
+                sampled_noise = torch.randn(
+                    [batch_size, self.model.num_training_frames, 16, 60, 104],
+                    device="cuda",
+                    dtype=self.dtype
+                )
 
-        video, _ = pipeline.inference(
-            noise=sampled_noise,
-            text_prompts=prompts,
-            return_latents=True,
-            initial_latent=initial_latent
-        )
-        current_video = video.permute(0, 1, 3, 4, 2).cpu().numpy() * 255.0
+            video, _ = pipeline.inference(
+                noise=sampled_noise,
+                text_prompts=prompts,
+                return_latents=True,
+                initial_latent=initial_latent
+            )
+            current_video = video.permute(0, 1, 3, 4, 2).cpu().numpy() * 255.0
         return current_video
 
     def train(self):
