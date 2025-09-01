@@ -341,7 +341,8 @@ class Trainer:
                 noise=sampled_noise,
                 text_prompts=prompts,
                 return_latents=True,
-                initial_latent=initial_latent
+                initial_latent=initial_latent,
+                low_memory=True
             )
             current_video = video.permute(0, 1, 3, 4, 2).cpu().numpy() * 255.0
         return current_video
