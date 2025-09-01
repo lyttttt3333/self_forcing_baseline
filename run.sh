@@ -1,4 +1,5 @@
-torchrun --nnodes=1 --nproc_per_node=8 \
+git pull origin main
+torchrun --nnodes=1 --nproc_per_node=7 \
   train.py \
   --config_path configs/self_forcing_dmd.yaml \
   --logdir logs/self_forcing_dmd \
