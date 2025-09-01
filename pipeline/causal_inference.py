@@ -10,7 +10,6 @@ class CausalInferencePipeline(torch.nn.Module):
     def __init__(
             self,
             args,
-            device,
             generator=None,
             text_encoder=None,
             vae=None
