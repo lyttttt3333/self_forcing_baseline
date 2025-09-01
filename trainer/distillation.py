@@ -164,6 +164,7 @@ class Trainer:
         if dist.get_rank() == 0:
             print("DATASET SIZE %d" % len(dataset))
         self.dataloader = cycle(dataloader)
+        self.dataset = dataset
 
         ##############################################################################################################
         # 6. Set up EMA parameter containers
@@ -362,8 +363,8 @@ class Trainer:
                 os.makedirs("tmp", exist_ok=True)
                 txt_path = os.path.join("tmp", f"video_info_rank-{rank}.txt")
                 with open(txt_path, "w") as f:
-                    batch = next(self.dataloader)
-                    video = self.generate_video(self.pipeline, batch["prompts"], image=None)
+                    batch = self.dataset[rank]
+                    video = self.generate_video(self.pipeline, [batch["prompts"]], image=None)
                     print("############## video shape",video.shape)
                     video = video[0].permute(3,0,1,2)
 
