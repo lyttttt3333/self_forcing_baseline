@@ -344,7 +344,7 @@ class Trainer:
                 initial_latent=initial_latent,
                 low_memory=True
             )
-            current_video = video.permute(0, 1, 3, 4, 2).cpu().numpy() * 255.0
+            current_video = video.permute(0, 1, 3, 4, 2) * 255.0
         return current_video
 
     def train(self):
