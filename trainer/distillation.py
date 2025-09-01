@@ -364,7 +364,7 @@ class Trainer:
                     batch = next(self.dataloader)
                     video = self.generate_video(self.pipeline, batch["prompts"], image=None)
                     print("############## video shape",video.shape)
-                    video = video[0].view(3,0,1,2)
+                    video = video[0].permute(3,0,1,2)
 
                     base_name = f"rank{rank}"
 
